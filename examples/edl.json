@@ -1,0 +1,127 @@
+{
+  "channel": "k1",
+  "shots_dir": "2000-01-01-vm-demo-k1-shots",
+  "product": "demo-k1",
+  "shots": [
+    {
+      "line": 0,
+      "img": "scene1",
+      "url": "VideoMotion demo",
+      "tab": "Demo",
+      "tabs": [
+        "Motion"
+      ],
+      "cam": [
+        [
+          0,
+          720,
+          700,
+          1400
+        ],
+        [
+          1.5,
+          720,
+          740,
+          1200
+        ]
+      ],
+      "cursor": [
+        [
+          0,
+          200,
+          300
+        ],
+        [
+          0.5,
+          "box:button",
+          "click"
+        ]
+      ],
+      "marks": [
+        [
+          0.6,
+          1.6,
+          "box:button"
+        ]
+      ]
+    },
+    {
+      "line": 1,
+      "img": "scene2",
+      "url": "VideoMotion demo",
+      "tab": "Demo",
+      "tabs": [
+        "Motion"
+      ],
+      "cam": [
+        [
+          0,
+          720,
+          700,
+          1400
+        ],
+        [
+          1.5,
+          720,
+          740,
+          1200
+        ]
+      ],
+      "cursor": [
+        [
+          0,
+          200,
+          300
+        ],
+        [
+          0.5,
+          "box:button",
+          "click"
+        ]
+      ],
+      "marks": [
+        [
+          0.6,
+          1.6,
+          "box:button"
+        ]
+      ],
+      "trans": "flash"
+    }
+  ],
+  "mgs": [
+    {
+      "id": "intro",
+      "type": "stack",
+      "line": 0,
+      "word": "Xem",
+      "offset": 0,
+      "dur": 1.0,
+      "sfx": [
+        [
+          "pop",
+          0.1
+        ]
+      ],
+      "data": {
+        "head": "THỬ CHUYỂN ĐỘNG",
+        "items": [
+          {
+            "icon": "film",
+            "title": "VIDEO DEMO",
+            "sub": "kiểm tra bộ dựng"
+          }
+        ]
+      }
+    }
+  ],
+  "thumb": {
+    "img": "scene2",
+    "variant": "v1",
+    "tag": "VIDEO DEMO",
+    "l1": "THỬ CHUYỂN ĐỘNG",
+    "num": "2",
+    "unit": "CẢNH",
+    "sub": "khung dọc rõ nét"
+  }
+}

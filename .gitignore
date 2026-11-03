@@ -1,0 +1,11 @@
+node_modules/
+.venv/
+__pycache__/
+*.pyc
+.env
+.env.*
+!.env.example
+.backup/
+sfx-library/mixkit/
+luma-video/public/videos/
+verification-output/

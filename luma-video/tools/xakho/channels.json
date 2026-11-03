@@ -1,0 +1,34 @@
+{
+ "_note": "Kênh của /videomotion. Mỗi edl.json có \"channel\": \"k1\" | \"k2\" (thiếu = k1). Chồng iu nhắn \"kênh 1\" (sticker vàng–đen) / \"kênh 2\" (sticker dán viền trắng, cam–xanh) → dùng đúng bộ dưới đây.",
+ "k1": {
+  "name": "Kênh 1 · Sticker vàng",
+  "id_prefix": "vm",
+  "anim": "anim.html",
+  "thumb": "thumb.html",
+  "sub_hl": "&H0000E5FF",
+  "smoke_tint": null,
+  "deliver_prefix": "VideoMotion",
+  "drive_prefix": "VideoMotion"
+ },
+ "k2": {
+  "name": "Kênh 2 · Sticker dán",
+  "id_prefix": "k2",
+  "anim": "anim-k2.html",
+  "thumb": "thumb-k2.html",
+  "sub_hl": "&H00006AFF",
+  "smoke_tint": [
+   [
+    12,
+    22,
+    52
+   ],
+   [
+    170,
+    190,
+    230
+   ]
+  ],
+  "deliver_prefix": "KENH2_StickerDan",
+  "drive_prefix": "KENH2"
+ }
+}

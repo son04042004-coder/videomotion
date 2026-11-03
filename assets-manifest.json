@@ -1,0 +1,37 @@
+[
+  {
+    "path": "sfx-library/mixkit/impact/2909-cool-impact-movie-trailer.wav",
+    "url": "https://assets.mixkit.co/active_storage/sfx/2909/2909.wav",
+    "sha256": "2a088c456500972fe92b8e8679f0d60fd8ec3c561333dd7272d5de12b4715299"
+  },
+  {
+    "path": "sfx-library/mixkit/transition/1490-fast-whoosh-transition.wav",
+    "url": "https://assets.mixkit.co/active_storage/sfx/1490/1490.wav",
+    "sha256": "2f914dcec1276107b888557e2e33043396cff10adad9e7b6f6adf93cc011c08b"
+  },
+  {
+    "path": "sfx-library/mixkit/pop/2364-hard-pop-click.wav",
+    "url": "https://assets.mixkit.co/active_storage/sfx/2364/2364.wav",
+    "sha256": "9b80f4c8f013f5afd0a7becb75a6fa9659a80eb46d1bea06456b6625c86ba700"
+  },
+  {
+    "path": "sfx-library/mixkit/swipe/2627-fast-swipe-zoom.wav",
+    "url": "https://assets.mixkit.co/active_storage/sfx/2627/2627.wav",
+    "sha256": "815721b4bb9121ad66d313309a881bd5ba032aa01570820ab24e192d7ff0aa49"
+  },
+  {
+    "path": "sfx-library/mixkit/pop/2870-correct-answer-tone.wav",
+    "url": "https://assets.mixkit.co/active_storage/sfx/2870/2870.wav",
+    "sha256": "084b78463e30dae4aac5edbf9e9c93cdee5ece4a4a688352e6a2b6686f9b1f4a"
+  },
+  {
+    "path": "sfx-library/mixkit/transition/175-short-transition-sweep.wav",
+    "url": "https://assets.mixkit.co/active_storage/sfx/175/175.wav",
+    "sha256": "6b3d6d71c6724c27c155149ed6eb6a00543f7908657cf58cd24cdbf67f5994ea"
+  },
+  {
+    "path": "sfx-library/mixkit/click/2577-interface-device-click.wav",
+    "url": "https://assets.mixkit.co/active_storage/sfx/2577/2577.wav",
+    "sha256": "bb9d4bb078ba650cd81027dfca724162cf1df0352fc56018cb6241aab5a406cc"
+  }
+]

@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@700;800;900&display=block" rel="stylesheet">
+<style>
+  /* Thumbnail TikTok kiểu C (sticker bựa). Mọi chữ quan trọng nằm trong dải 3:4 (y 240–1680) để đọc rõ ở lưới trang cá nhân. */
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 1080px; height: 1920px; overflow: hidden; font-family: 'Be Vietnam Pro', sans-serif; background: #111; }
+  #bg { position: absolute; inset: -40px; width: 1160px; height: 2000px; object-fit: cover; filter: blur(10px) brightness(.55) saturate(1.2); }
+  #shot { position: absolute; left: 110px; top: 1010px; width: 860px; height: 560px; object-fit: cover; object-position: var(--pos, 50% 30%);
+          border: 10px solid #111; border-radius: 30px; box-shadow: 16px 16px 0 #111; transform: rotate(-3deg); }
+  .stk { -webkit-text-stroke: var(--sw) #111; paint-order: stroke fill; font-weight: 900; text-align: center; position: absolute; left: 40px; right: 40px; }
+  #tag { position: absolute; top: 270px; left: 50%; transform: translateX(-50%) rotate(-4deg); font-weight: 900; font-size: 64px; padding: 6px 36px;
+         border: 7px solid #111; border-radius: 20px; box-shadow: 10px 10px 0 #111; white-space: nowrap; }
+  #l1 { top: 390px; font-size: 120px; line-height: 1.02; --sw: 22px; color: #fff; transform: rotate(-3deg); }
+  #num { top: 660px; font-size: 330px; line-height: .9; --sw: 30px; color: #ffd400; letter-spacing: -8px; transform: rotate(-5deg); filter: drop-shadow(14px 16px 0 #111); }
+  #num small { font-size: 160px; letter-spacing: 0; }
+  #sub { position: absolute; top: 1540px; left: 50%; transform: translateX(-50%) rotate(2deg); font-weight: 900; font-size: 58px; padding: 8px 34px;
+         border: 7px solid #111; border-radius: 20px; box-shadow: 10px 10px 0 #111; background: #fff; color: #111; white-space: nowrap; }
+  .v2 #tag { background: #ff2b2b; color: #fff; } .v1 #tag { background: #ffd400; color: #111; }
+  .v2 #num { color: #fff; } .v2 #sub { background: #ffd400; }
+</style>
+</head>
+<body>
+<img id="bg"><img id="shot">
+<div id="tag"></div><div class="stk" id="l1"></div><div class="stk" id="num"></div><div id="sub"></div>
+<script>
+  window.setup = (d) => {
+    document.body.className = d.variant || 'v1';
+    document.getElementById('bg').src = d.img; document.getElementById('shot').src = d.img;
+    document.getElementById('shot').style.setProperty('--pos', d.pos || '50% 30%');
+    document.getElementById('tag').textContent = d.tag;
+    document.getElementById('l1').innerHTML = d.l1;
+    const n = document.getElementById('num');
+    n.innerHTML = `${d.num}<small> ${d.unit}</small>`;
+    n.style.fontSize = (d.num.length >= 4 ? 250 : d.num.length === 3 ? 300 : 340) + 'px';
+    document.getElementById('sub').textContent = d.sub;
+    return Promise.all([document.fonts.ready, ...[...document.images].map((i) => i.decode().catch(() => 0))]);
+  };
+</script>
+</body>
+</html>

@@ -1,0 +1,435 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700;800&family=Be+Vietnam+Pro:wght@800;900&display=block" rel="stylesheet">
+<style>
+  /* Motion graphic KÊNH 2 "Sticker dán" (chồng iu chốt 30/10, mẫu C): cùng họ sticker bựa của kênh 1 nhưng mọi thứ là sticker
+     cắt viền trắng dày (die-cut) dán lên màn hình — bóc–dán xoay nghiêng, băng keo washi, emoji sticker bay; cam–xanh dương–xanh lá.
+     Cùng API/dữ liệu với anim.html: window.setup({type, dur, data}) rồi window.seek(t). Vùng an toàn x 60–940, y 150–1450. */
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 1080px; height: 1920px; overflow: hidden; background: transparent; font-family: 'Baloo 2', sans-serif; }
+  .abs { position: absolute; }
+  .dim { position: absolute; left: 0; right: 0; top: 392px; height: 1000px; background: #0a1a3a; opacity: 0; }
+  .die { filter: drop-shadow(5px 0 0 #fff) drop-shadow(-5px 0 0 #fff) drop-shadow(0 5px 0 #fff) drop-shadow(0 -5px 0 #fff) drop-shadow(0 14px 16px rgba(0,0,0,.45)); }
+  .chip { display: inline-block; border-radius: 26px; font-weight: 800; color: #fff; padding: 2px 34px 8px; }
+  .or { background: #ff6a00; } .bl { background: #2f6bff; } .gr { background: #00b86b; } .wh { background: #fff; color: #10204a; } .yl { background: #ffd23f; color: #10204a; } .pk { background: #ff4f8b; }
+  .big { font-family: 'Be Vietnam Pro'; font-weight: 900; -webkit-text-stroke: var(--sw, 14px) #10204a; paint-order: stroke fill; }
+  .tape { position: absolute; width: 150px; height: 46px; background: repeating-linear-gradient(45deg, rgba(255,240,180,.92) 0 14px, rgba(255,210,120,.92) 14px 28px); }
+  .row { position: relative; display: flex; align-items: center; gap: 20px; height: 108px; padding: 0 28px; border-radius: 28px; color: #fff; }
+  .row .e { font-family: 'Segoe UI Emoji'; font-size: 56px; flex: none; }
+  .row b { display: block; font-weight: 800; font-size: 44px; line-height: 1; }
+  .row span { display: block; font-weight: 700; font-size: 27px; opacity: .92; }
+  .cmp .row { height: 92px; } .cmp .row b { font-size: 38px; } .cmp .row span { font-size: 24px; } .cmp .row .e { font-size: 48px; }
+  .emoji, .fly { font-family: 'Segoe UI Emoji'; }
+  .fly { position: absolute; font-size: 104px; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+const clamp = (x) => Math.max(0, Math.min(1, x));
+const lin = (t, a, b) => clamp((t - a) / (b - a));
+const outBack = (x) => { const c1 = 1.8, c3 = c1 + 1; x = clamp(x); return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2); };
+const outCubic = (x) => 1 - Math.pow(1 - clamp(x), 3);
+const inCubic = (x) => Math.pow(clamp(x), 3);
+const fmt = (v, dec = 0) => v.toLocaleString('vi-VN', { minimumFractionDigits: dec, maximumFractionDigits: dec, useGrouping: false });   // 1850, không "1.850" (dễ bị đọc thành tiền)
+const $ = (id) => document.getElementById(id);
+let S = null;
+const EMO = { bolt: '⚡', code: '💻', spark: '✨', check: '✅', search: '🔎', film: '🎬', globe: '🌐', book: '📘', user: '🙋', cloud: '☁️', mail: '💌', chart: '📈', image: '🖼️', plane: '✈️' };
+const exitK = (t) => 1 - inCubic(lin(t, S.dur - 0.25, S.dur));
+function setDim(t, max = 0.45) { S.dim.style.opacity = max * outCubic(lin(t, 0, 0.18)) * exitK(t); }
+// số chạy: "180" → 0…180, giữ tiền tố/hậu tố ("-53%"); chữ không phải số thì hiện thẳng
+const roll = (str, k) => { const m = String(str).match(/^(\D*)([\d.,]+)(.*)$/); return m ? m[1] + fmt(parseFloat(m[2].replace(/\./g, '').replace(',', '.')) * outCubic(k), m[2].includes(',') ? 1 : 0) + m[3] : str; };
+// dán sticker: rơi xuống, lật quanh trục X như vừa bóc ra rồi ép xuống, dừng ở góc nghiêng `rot`
+function stick(node, t, a, rot, extra = '') { const k = lin(t, a, a + 0.38), b = outBack(k);
+  node.style.transform = `perspective(900px) translateY(${-90 * (1 - b)}px) rotateX(${55 * (1 - outCubic(k))}deg) rotate(${rot + 10 * (1 - b)}deg) scale(${0.5 + 0.5 * b}) ${extra}`; node.style.opacity = clamp(k * 5); }
+function exitAll(t) { const e = exitK(t); $('grp').style.opacity = e; $('grp').style.transform = `translateY(${(1 - e) * -160}px) rotate(${(1 - e) * 8}deg)`; }
+// emoji sticker bay quanh khung (mỗi loại thẻ một bộ)
+let FLY = [];
+const flies = (set) => { FLY = set; return set.map((f, i) => `<div class="fly die" id="fl${i}" style="left:${f[1]}px;top:${f[2]}px">${f[0]}</div>`).join(''); };
+function flySeek(t) { FLY.forEach((f, i) => { const k = lin(t, 0.5 + i * 0.12, 0.8 + i * 0.12); $('fl' + i).style.transform = `rotate(${(i % 2 ? 14 : -14) + Math.sin(t * 4 + i) * 8}deg) scale(${outBack(k)})`; $('fl' + i).style.opacity = exitK(t); }); }
+
+const TYPES = {
+  slam: {  // con số chính
+    build(d) {
+      return `<div class="dim"></div>${flies([['🔥', 70, 470], ['⭐', 880, 600], ['😎', 80, 1170], ['💯', 860, 1190]])}<div class="abs" id="grp" style="left:60px;width:880px;top:520px;text-align:center">
+        <div class="die" id="tag" style="display:inline-block;position:relative"><div class="chip or" style="font-size:56px">${d.tag}</div><div class="tape" style="left:-50px;top:-18px;transform:rotate(-30deg)"></div></div><br>
+        <div class="die" id="prod" style="display:inline-block;margin-top:26px"><div class="chip bl" style="font-size:52px">${d.prod}</div></div>
+        <div class="die big" id="numw" style="margin-top:14px;font-size:${d.num.length >= 4 ? 220 : 270}px;line-height:1;letter-spacing:-6px;color:#ffd23f"><span id="num">${d.num}</span><span style="font-size:110px;letter-spacing:0;margin-left:14px;color:#fff">${d.unit}</span></div>
+        <div class="die" id="sub" style="display:inline-block;margin-top:16px"><div class="chip gr" style="font-size:42px">${d.sub}</div></div></div>`;
+    },
+    seek(t) {
+      setDim(t); flySeek(t);
+      stick($('tag'), t, 0, -5); stick($('prod'), t, 0.12, 3); stick($('numw'), t, 0.24, -4); stick($('sub'), t, 0.6, 2);
+      $('num').textContent = roll(S.data.num, lin(t, 0.24, 0.8));
+      exitAll(t);
+    },
+  },
+  strike: {  // phí trên trang chính bị gạch + bộ đếm + tem "bên em"
+    build(d) {
+      return `<div class="dim"></div>${flies([['😱', 70, 500], ['👀', 870, 640]])}<div class="abs" id="grp" style="left:70px;width:860px;top:500px;text-align:center">
+        <div class="die" id="lab" style="display:inline-block"><div class="chip wh" style="font-size:46px">${d.label}</div></div><br>
+        <div id="valbox" style="position:relative;display:inline-block;margin-top:26px">
+          <div class="die big" style="--sw:12px;font-size:140px;line-height:1;color:#fff">${d.val}<span style="font-size:62px"> ${d.per}</span></div>
+          <div id="line" style="position:absolute;left:-24px;top:44%;height:26px;border-radius:14px;background:#ff3b3b;border:5px solid #fff;box-shadow:0 6px 12px rgba(0,0,0,.4);transform:rotate(-7deg);transform-origin:left center"></div></div>
+        <div class="die" id="calc" style="margin-top:24px"><div class="chip bl" style="font-size:52px">${d.calcPre} <span id="cnt">0</span> ${d.calcUnit}</div></div>
+        <div class="die" id="stamp" style="display:inline-block;position:relative;margin-top:34px"><div class="chip or" style="font-size:80px;padding:4px 44px 12px">${d.stamp}</div>
+          <div class="tape" style="right:-46px;top:-16px;transform:rotate(28deg)"></div></div></div>`;
+    },
+    seek(t) {
+      setDim(t, 0.5); flySeek(t); const d = S.data;
+      stick($('lab'), t, 0, -3); stick($('valbox'), t, 0.1, 0);
+      $('line').style.width = `${($('valbox').offsetWidth + 48) * outCubic(lin(t, d.strikeAt, d.strikeAt + 0.3))}px`;
+      const c = lin(t, d.countAt, d.countAt + 0.9); stick($('calc'), t, d.countAt, 2);
+      $('cnt').textContent = fmt(Math.round(d.count * outCubic(c)));
+      stick($('stamp'), t, d.stampAt, -5);
+      exitAll(t);
+    },
+  },
+  stack: {  // chồng sticker quyền lợi
+    build(d) {
+      const cls = ['or', 'bl', 'gr', 'yl'];
+      const rows = d.items.map((it, i) => `<div class="die" id="c${i}" style="margin-bottom:${d.compact ? 20 : 26}px"><div class="row ${cls[i % 4]}" style="${cls[i % 4] === 'yl' ? 'color:#10204a' : ''}"><div class="e">${EMO[it.icon] || '⭐'}</div><div><b>${it.title}</b><span>${it.sub}</span></div>
+        ${i === 0 ? '<div class="tape" style="right:-40px;top:-20px;transform:rotate(28deg)"></div>' : ''}</div></div>`).join('');
+      return `<div class="dim"></div><div class="abs${d.compact ? ' cmp' : ''}" id="grp" style="left:70px;width:850px;top:${d.top || 470}px">
+        <div class="die" id="head" style="display:inline-block;margin-bottom:26px"><div class="chip wh" style="font-size:48px">${d.head}</div></div>${rows}</div>`;
+    },
+    seek(t) {
+      setDim(t, S.data.compact ? 0.25 : 0.45);
+      stick($('head'), t, 0, -3); S.data.items.forEach((it, i) => stick($('c' + i), t, it.at, i % 2 ? 1.6 : -1.6));
+      exitAll(t);
+    },
+  },
+  math: {  // phép chia ra mỗi tháng/ngày
+    build(d) {
+      return `<div class="dim"></div>${flies([['🤑', 820, 470], ['🧮', 90, 1080]])}<div class="abs" id="grp" style="left:60px;width:880px;top:560px;text-align:center">
+        <div class="die" id="expr" style="display:inline-block"><div class="chip bl" style="font-size:96px;padding:0 44px 10px">${d.expr}</div></div>
+        <div class="die big" id="res" style="font-size:210px;line-height:1.05;color:#ffd23f;margin-top:16px">≈ <span id="cnt">0</span></div>
+        <div class="die" id="unit" style="display:inline-block;position:relative;margin-top:18px"><div class="chip gr" style="font-size:60px">${d.unit}</div><div class="tape" style="left:-44px;top:-16px;transform:rotate(-26deg)"></div></div></div>`;
+    },
+    seek(t) {
+      setDim(t, 0.5); flySeek(t); const d = S.data;
+      stick($('expr'), t, 0, -3); stick($('res'), t, 0.35, -4); stick($('unit'), t, 0.9, 3);
+      $('cnt').textContent = fmt(d.value * outCubic(lin(t, 0.35, 1.1)), d.dec);
+      exitAll(t);
+    },
+  },
+  choice: {  // hai lựa chọn: sticker đang được nói tới phóng to + đổi màu, ngón tay trượt theo
+    build(d) {
+      const card = (o, id) => `<div class="die" id="${id}" style="margin-bottom:30px"><div class="row" id="${id}r" style="height:168px;justify-content:space-between;padding:0 36px">
+          <div style="flex:1"><b style="font-size:42px">${o.label}</b><span style="font-size:28px">${o.note}</span></div>
+          <div class="big" style="--sw:10px;font-size:82px;white-space:nowrap;color:#fff">${o.val}</div></div></div>`;
+      return `<div class="dim"></div><div class="abs" id="grp" style="left:90px;width:830px;top:520px">
+        <div class="die" id="head" style="display:inline-block;margin-bottom:30px"><div class="chip wh" style="font-size:48px">${d.head}</div></div>
+        ${card(d.a, 'ca')}${card(d.b, 'cb')}
+        <div class="emoji abs die" id="hand" style="font-size:96px;left:-84px">👉</div></div>`;
+    },
+    seek(t) {
+      setDim(t, 0.5); const d = S.data;
+      stick($('head'), t, 0, -3);
+      ['ca', 'cb'].forEach((id, i) => {
+        const on = (i === 0 && t < d.switchAt) || (i === 1 && t >= d.switchAt);
+        stick($(id), t, 0.12 + i * 0.15, i ? 1.5 : -1.5, `scale(${on ? 1.04 : 0.94})`);
+        $(id).style.opacity = clamp(lin(t, 0.12 + i * 0.15, 0.2 + i * 0.15)) * (on ? 1 : 0.75);
+        $(id + 'r').style.background = on ? (i ? '#ff6a00' : '#2f6bff') : '#7b8db8';
+      });
+      const y = t < d.switchAt ? 0 : 198 * outCubic(lin(t, d.switchAt, d.switchAt + 0.3));
+      $('hand').style.top = `${130 + y}px`;
+      $('hand').style.transform = `translateX(${Math.sin(t * 10) * 10}px) scale(${outBack(lin(t, 0.5, 0.8))})`;
+      exitAll(t);
+    },
+  },
+  end: {  // CTA cuối
+    build(d) {
+      return `<div class="dim" style="height:1100px"></div>${flies([['🔥', 70, 470], ['⭐', 880, 600], ['😎', 80, 1170], ['💯', 860, 1190]])}<div class="abs" id="grp" style="left:60px;width:880px;top:440px;text-align:center">
+        <div class="die big" id="big" style="--sw:12px;font-size:124px;line-height:1.02;color:#ff6a00">${d.big}</div>
+        <div class="die" id="lead" style="display:inline-block;margin-top:16px"><div class="chip wh" style="font-size:40px">${d.lead}</div></div>
+        <div class="die" id="p1" style="margin-top:34px"><div class="row bl" style="height:146px;text-align:left"><div class="e" style="font-size:72px">🌐</div><div><b style="font-size:54px" id="url"></b><span>${d.urlNote}</span></div>
+          <div class="tape" style="left:-40px;top:-18px;transform:rotate(-24deg)"></div></div></div>
+        <div class="die" id="or" style="display:inline-block;margin-top:26px"><div class="chip yl" style="font-size:36px">${d.or}</div></div>
+        <div class="die" id="p2" style="margin-top:26px"><div class="row or" style="height:146px;text-align:left"><div class="e" style="font-size:72px">✈️</div><div><b style="font-size:54px">${d.bot}</b><span>${d.botNote}</span></div></div></div>
+        <div class="emoji" id="fing" style="font-size:110px">👆</div></div>`;
+    },
+    seek(t) {
+      S.dim.style.opacity = 0.55 * outCubic(lin(t, 0, 0.2)); flySeek(t); const d = S.data;
+      stick($('big'), t, 0, -4); stick($('lead'), t, 0.25, 2); stick($('p1'), t, 0.38, -1.5); stick($('or'), t, 0.55, 3);
+      stick($('p2'), t, 0.65, 1.5, t > 1.1 ? `scale(${1 + 0.035 * Math.sin(t * 7)})` : '');
+      $('url').textContent = d.url.slice(0, Math.round(d.url.length * lin(t, 0.5, 1.1)));
+      $('fing').style.transform = `translateY(${-Math.abs(Math.sin(t * 5)) * 24}px) scale(${outBack(lin(t, 0.9, 1.2))})`;
+    },
+  },
+};
+// ===== Thẻ học từ video-shotcraft (Apache-2.0, viết lại theo công thức trong references/shots, kiểu sticker dán, khung dọc 9:16) =====
+const outQuint = (x) => 1 - Math.pow(1 - clamp(x), 5);
+const spring = (x, damp = 13) => { x = Math.max(0, x); return 1 - Math.exp(-damp * 0.55 * x) * Math.cos(x * 16); };   // lò xo có 1 lần vượt
+const inQuad = (x) => clamp(x) * clamp(x);
+const swift = (x) => { x = clamp(x); return x < 0.5 ? 2 * x * x : 1 - Math.pow(-2 * x + 2, 2) / 2; };
+// gạch chân bút dạ: path SVG rộng giữa, nhỏ 2 đầu, hơi dốc lên (trái thấp phải cao)
+const marker = (id, w) => `<svg id="${id}" class="abs" style="left:-6px;bottom:-14px;width:${w + 12}px;height:30px;overflow:visible" viewBox="0 0 ${w + 12} 30">
+  <path d="M4 22 Q ${(w + 12) * 0.5} 12 ${w + 8} 8" fill="none" stroke="#ff6a00" stroke-width="13" stroke-linecap="round" opacity=".92" pathLength="100" stroke-dasharray="100" stroke-dashoffset="100"/></svg>`;
+const markerSeek = (id, t, a) => { const p = document.querySelector(`#${id} path`); if (p) p.style.strokeDashoffset = 100 * (1 - outCubic(lin(t, a, a + 0.33))); };
+const shake = (t, a, amp = 18, tau = 0.06, dur = 0.2) => (t > a && t < a + dur ? amp * Math.exp(-(t - a) / tau) * Math.sin((t - a) * 120) : 0);
+
+Object.assign(TYPES, {
+  pricecard: {  // product-card-progressive-assemble: thẻ sản phẩm tự điền từng ô, phí cũ bị gạch rồi mức mới bật ra
+    build(d) {
+      return `<div class="dim"></div><div class="abs" id="grp" style="left:70px;width:850px;top:${d.top || 470}px">
+        <div class="die" id="card" style="background:#fff;border-radius:34px;padding:34px 36px 30px;position:relative">
+          <div style="display:flex;align-items:center;gap:22px">
+            <div class="f" id="f0" style="width:110px;height:110px;border-radius:28px;background:#10204a;display:grid;place-items:center;font-family:'Segoe UI Emoji';font-size:64px">${d.icon || '🤖'}</div>
+            <div class="f" id="f1" style="font-family:'Be Vietnam Pro';font-weight:900;font-size:54px;line-height:1.05;color:#10204a">${d.title}</div></div>
+          <div style="display:flex;gap:12px;margin-top:20px">${(d.tags || []).map((g, i) => `<div class="f chip ${['bl', 'gr', 'pk'][i % 3]}" id="g${i}" style="font-size:30px;padding:0 22px 4px">${g}</div>`).join('')}</div>
+          <div id="prow" style="margin-top:22px;height:124px;position:relative">
+            <div class="f" id="old" style="font-family:'Be Vietnam Pro';font-weight:900;font-size:96px;line-height:1;color:#10204a;transform-origin:left bottom;position:absolute;left:0;bottom:0;white-space:nowrap">${d.old}<div id="oldline" style="position:absolute;left:-6px;top:52%;height:10px;border-radius:5px;background:#ff3b3b;width:0"></div></div>
+            <div class="f" id="new" style="position:absolute;bottom:-6px;line-height:1;font-family:'Be Vietnam Pro';font-weight:900;font-size:112px;color:#ff6a00;-webkit-text-stroke:8px #10204a;paint-order:stroke fill;white-space:nowrap;transform-origin:left bottom">${d.new}</div>
+            <div class="f chip or" id="chipx" style="position:absolute;bottom:14px;white-space:nowrap;font-size:30px;padding:0 20px 4px">${d.chip || ''}</div></div>
+          ${(d.lines || []).map((l, i) => `<div class="f" id="l${i}" style="position:relative;font-weight:700;font-size:34px;color:#10204a;margin-top:${i ? 6 : 16}px;white-space:nowrap">
+              <span id="h${i}" style="position:absolute;left:-6px;right:-6px;top:6px;bottom:2px;background:rgba(255,210,63,.65);border-radius:8px;transform-origin:left;transform:scaleX(0)"></span><span style="position:relative">✓ ${l}</span></div>`).join('')}
+          <div class="f" id="btn" style="margin-top:22px;height:86px;border-radius:24px;background:#dfe6f5;position:relative;overflow:hidden;display:grid;place-items:center">
+            <div id="btnfill" style="position:absolute;inset:0;background:#ff6a00;transform-origin:left;transform:scaleX(0)"></div>
+            <b id="btntx" style="position:relative;font-weight:800;font-size:40px;color:#fff;opacity:0">${d.button || 'NHẤC NGAY'}</b></div>
+          <div id="cur" class="abs" style="border:4px solid #2f6bff;border-radius:18px;box-shadow:0 0 0 6px rgba(47,107,255,.18);pointer-events:none">
+            <div style="position:absolute;top:-30px;left:-4px;background:#2f6bff;color:#fff;font-weight:800;font-size:18px;padding:0 10px 2px;border-radius:8px">TỰ ĐIỀN</div></div>
+        </div></div>`;
+    },
+    layout() {   // đo hộp từng ô (toạ độ trong thẻ) cho con trỏ tự điền
+      const card = $('card').getBoundingClientRect();
+      const box = (id) => { const r = $(id).getBoundingClientRect(); return [r.left - card.left - 8, r.top - card.top - 8, r.width + 16, r.height + 16]; };
+      const n = (S.data.lines || []).length, g = (S.data.tags || []).length;
+      // lịch: [ô, giây con trỏ tới] — cùng nhóm cách 0,1s, khác nhóm 0,33–0,66s (công thức 8/20/30/42/76/96/114 khung)
+      S.plan = [['f0', 0.27], ['f1', 0.67], ...Array.from({ length: g }, (_, i) => [`g${i}`, 1.0 + i * 0.1]), ['old', 1.4],
+        ...Array.from({ length: n }, (_, i) => [`l${i}`, 2.55 + i * 0.12]), ['btn', 3.0 + n * 0.12]];
+      S.boxes = S.plan.map(([id]) => box(id));
+    },
+    seek(t) {
+      setDim(t, 0.5); const d = S.data;
+      const c = outCubic(lin(t, 0, 0.45));
+      $('card').style.transform = `translateY(${30 * (1 - c)}px) scale(${(0.96 + 0.04 * c) * (1 + 0.035 * swift(t / Math.max(1, S.dur - 1)))})`;
+      $('card').style.opacity = clamp(t * 6);
+      S.plan.forEach(([id, at], i) => {
+        const el = $(id), k = lin(t, at + 0.07, at + 0.53);
+        if (id.startsWith('g')) { el.style.transform = `scale(${0.4 + 0.6 * spring(t - at - 0.07)})`; el.style.opacity = clamp((t - at - 0.07) * 8); }
+        else { el.style.transform = `translateY(${18 * (1 - outQuint(k))}px)`; el.style.opacity = outQuint(k); el.style.filter = k < 1 ? `blur(${6 * (1 - outQuint(k))}px)` : ''; }
+        if (id.startsWith('l')) $('h' + id.slice(1)).style.transform = `scaleX(${outCubic(lin(t, at + 0.33, at + 0.53))})`;
+      });
+      // phí cũ: giữ 0,6s cho đọc rồi co lại + xám + gạch; mức mới bật lò xo 1.18→1
+      const sa = 2.07, dg = lin(t, sa, sa + 0.2);
+      $('old').style.transform = `scale(${1 - 0.54 * outCubic(dg)})`; $('old').style.color = dg > 0 ? `rgb(${16 + 120 * dg},${32 + 110 * dg},${74 + 70 * dg})` : '#10204a';
+      $('oldline').style.width = `${($('old').offsetWidth + 12) * outCubic(dg)}px`;
+      const ow = $('old').offsetWidth, nl = ow * 0.46 + 26; $('new').style.left = `${nl}px`; const cw = $('card').clientWidth - 72, fit = nl + $('new').offsetWidth + 18 + $('chipx').offsetWidth <= cw;   // không đủ chỗ thì nhãn nằm trên mức mới
+      $('chipx').style.left = `${fit ? nl + $('new').offsetWidth + 18 : nl + 8}px`; $('chipx').style.bottom = fit ? '14px' : '98px';
+      const nk = t - sa - 0.03; $('new').style.opacity = nk > 0 ? 1 : 0; $('new').style.filter = '';
+      $('new').style.transform = `scale(${nk > 0 ? 1 + 0.18 * (1 - spring(nk, 14)) : 0.6})`;
+      const ck = t - sa - 0.23; $('chipx').style.opacity = ck > 0 ? 1 : 0; $('chipx').style.transform = `translateX(${40 * (1 - outCubic(ck * 4))}px) scale(${0.4 + 0.6 * spring(ck)})`;
+      $('new').parentElement.querySelector('#old').style.opacity = Math.max(0.0001, outQuint(lin(t, 1.47, 1.93)));
+      // nút: đổ cam từ trái sang phải
+      const ba = S.plan[S.plan.length - 1][1];
+      $('btnfill').style.transform = `scaleX(${outCubic(lin(t, ba + 0.07, ba + 0.47))})`; $('btntx').style.opacity = lin(t, ba + 0.27, ba + 0.4);
+      // con trỏ tự điền: nhảy giữa các ô (0,2s, swift), mờ đi khi vào nút
+      let k = 0; while (k < S.plan.length - 1 && t >= S.plan[k + 1][1] - 0.2) k++;
+      const a = S.boxes[Math.max(0, k - 1)], b = S.boxes[k], m = k === 0 ? 1 : swift(lin(t, S.plan[k][1] - 0.2, S.plan[k][1]));
+      const r = a.map((v, i) => v + (b[i] - v) * m);
+      Object.assign($('cur').style, { left: `${r[0]}px`, top: `${r[1]}px`, width: `${r[2]}px`, height: `${r[3]}px`, opacity: clamp((t - 0.15) * 6) * (1 - lin(t, ba + 0.1, ba + 0.37)) });
+      exitAll(t);
+    },
+  },
+  compare: {  // before-after-slider-scrub: hai bản chồng nhau, cần gạt vung nhanh rồi quét chậm
+    build(d) {
+      const panel = (p, id, after) => `<div class="abs" id="${id}" style="inset:0;border-radius:34px;overflow:hidden;background:${after ? 'linear-gradient(160deg,#ff8a2a,#ff6a00)' : '#9aa3b8'};display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px">
+          <div class="chip ${after ? 'wh' : ''}" style="font-size:40px;${after ? '' : 'background:#6b7488'}">${p.label}</div>
+          <div class="big" style="--sw:${after ? 12 : 0}px;font-size:170px;line-height:1;color:${after ? '#fff' : '#dfe3ec'}">${p.big}</div>
+          <div style="font-weight:800;font-size:40px;color:${after ? '#fff' : '#eef0f5'}">${p.sub}</div></div>`;
+      return `<div class="dim"></div><div class="abs" id="grp" style="left:70px;width:850px;top:${d.top || 520}px">
+        <div class="die" style="position:relative;height:520px" id="frame">${panel(d.before, 'pb', false)}${panel(d.after, 'pa', true)}
+          <div class="abs" id="bar" style="top:-20px;bottom:-20px;width:10px;margin-left:-5px;background:#fff;border-radius:5px;box-shadow:0 0 0 3px #10204a">
+            <div id="knob" style="position:absolute;top:50%;left:50%;width:96px;height:96px;margin:-48px 0 0 -48px;border-radius:50%;background:#fff;border:5px solid #10204a;display:grid;place-items:center;font-weight:900;font-size:40px;color:#10204a">⇆</div></div></div></div>`;
+    },
+    seek(t) {
+      setDim(t, 0.5);
+      // 8% → lùi 6,5% → vung 12 khung tới 76% → bật về 70% → dừng → quét chậm (gấp ~5 lần) tới 100%
+      const keys = [[0, 8], [0.33, 8], [0.47, 6.5], [0.87, 76], [1.27, 70], [1.87, 70], [3.5, 100]];
+      let x = 100, v = 0;
+      for (let i = 0; i < keys.length - 1; i++) { const [a, pa] = keys[i], [b, pb] = keys[i + 1]; if (t <= b) { const k = (t - a) / (b - a); const e = i === 2 ? outCubic(k) : swift(k); x = pa + (pb - pa) * e; v = (pb - pa) / (b - a); break; } }
+      $('pa').style.clipPath = `inset(0 ${100 - x}% 0 0)`; $('bar').style.left = `${x}%`;
+      $('knob').style.transform = `scaleX(${1 + Math.min(0.18, Math.abs(v) / 900)})`;
+      stick($('frame'), t, 0, -1.5);
+      $('bar').style.opacity = 1 - lin(t, 3.5, 3.7);
+      exitAll(t);
+    },
+  },
+  gauge: {  // gauge-readout-moves A: kim vung hết cung (tự kiểm) rồi lò xo về đúng số, các đồng hồ lệch nhau 4 khung
+    build(d) {
+      const g = (o, i) => { const ticks = Array.from({ length: 19 }, (_, k) => { const a = (-135 + k * 15) * Math.PI / 180; return `<line id="t${i}_${k}" x1="${150 + Math.sin(a) * 112}" y1="${150 - Math.cos(a) * 112}" x2="${150 + Math.sin(a) * 128}" y2="${150 - Math.cos(a) * 128}" stroke="#c8d0e4" stroke-width="7" stroke-linecap="round"/>`; }).join('');
+        return `<div class="die" id="gw${i}" style="background:#fff;border-radius:34px;padding:16px 10px 20px;width:390px;text-align:center">
+          <svg viewBox="0 0 300 250" style="width:330px;height:275px">${ticks}
+            <g id="nd${i}" style="transform-origin:150px 150px"><path d="M146 150 L150 44 L154 150 Z" fill="#ff6a00"/><circle cx="150" cy="150" r="16" fill="#10204a"/></g></svg>
+          <div class="big" id="gv${i}" style="--sw:9px;font-size:92px;line-height:1;color:${i ? '#ff6a00' : '#2f6bff'};margin-top:-46px">${o.text}</div>
+          <div class="chip ${i ? 'or' : 'bl'}" style="font-size:34px;margin-top:8px">${o.label}</div></div>`; };
+      return `<div class="dim"></div><div class="abs" id="grp" style="left:60px;width:880px;top:${d.top || 500}px;text-align:center">
+        <div class="die" id="head" style="display:inline-block;margin-bottom:26px"><div class="chip wh" style="font-size:46px">${d.head}</div></div>
+        <div style="display:flex;justify-content:center;gap:40px">${d.gauges.map(g).join('')}</div></div>`;
+    },
+    seek(t) {
+      setDim(t, 0.5); stick($('head'), t, 0, -3);
+      S.data.gauges.forEach((o, i) => {
+        const a0 = 0.3 + i * 0.13, f = clamp(o.value / o.max);
+        stick($('gw' + i), t, 0.05 + i * 0.1, i ? 2 : -2);
+        const up = outCubic(lin(t, a0, a0 + 0.4)), back = t > a0 + 0.4 ? spring(t - a0 - 0.4, 11) : 0;
+        const ang = -135 + 270 * (up - (1 - f) * back);
+        $('nd' + i).style.transform = `rotate(${ang}deg)`;
+        for (let k = 0; k < 19; k++) { const lit = (-135 + k * 15) <= ang + 0.1 && t > a0; document.getElementById(`t${i}_${k}`).setAttribute('stroke', lit ? (k > 14 ? '#ff3b3b' : i ? '#ff6a00' : '#2f6bff') : '#c8d0e4'); }
+        const pv = t - a0 - 0.75; $('gv' + i).style.transform = `scale(${pv > 0 ? 1 + 0.25 * (1 - spring(pv)) : 0})`;
+      });
+      exitAll(t);
+    },
+  },
+  slot: {  // pill-slot-cycle: thân câu đứng yên, ô chữ đổi từng nhịp 0,7s, chốt bằng chữ cuối có gạch bút dạ
+    build(d) {
+      return `<div class="dim"></div><div class="abs" id="grp" style="left:60px;width:880px;top:${d.top || 600}px;text-align:center">
+        <div class="die big" id="stem" style="--sw:12px;font-size:84px;line-height:1.1;color:#fff">${d.stem}</div>
+        <div id="slot" style="position:relative;height:150px;margin-top:22px;perspective:700px">
+          ${d.words.map((w, i) => `<div class="abs die" id="w${i}" style="left:0;right:0;top:0;text-align:center;opacity:0"><div class="chip ${['or', 'bl', 'gr', 'pk'][i % 4]}" style="font-size:72px;padding:4px 44px 14px">${w}</div></div>`).join('')}
+          <div class="abs" id="fin" style="left:0;right:0;top:4px;text-align:center;opacity:0"><span class="die big" style="--sw:12px;font-size:100px;color:#ffd23f;position:relative;display:inline-block" id="finw">${d.final}</span></div></div></div>`;
+    },
+    layout() { const w = $('finw'); w.insertAdjacentHTML('beforeend', marker('mk', w.offsetWidth)); },
+    seek(t) {
+      setDim(t, 0.45); stick($('stem'), t, 0, -2); const d = S.data, beat = d.beat || 0.7, a0 = 0.4;
+      d.words.forEach((_, i) => {
+        const s = a0 + i * beat, inK = lin(t, s, s + 0.27), outK = lin(t, s + beat, s + beat + 0.23), el = $('w' + i);
+        const y = 120 * (1 - outCubic(inK)) - 130 * inCubic(outK), bl = 14 * (1 - outCubic(inK)) + 10 * inCubic(outK);
+        el.style.transform = `translateY(${y}px) rotateX(${-38 * (1 - outCubic(inK)) + 34 * inCubic(outK)}deg)`;
+        el.style.opacity = t < s ? 0 : clamp(inK * 3) * (1 - outK); el.style.filter = bl > 0.3 ? `blur(${bl}px)` : 'drop-shadow(5px 0 0 #fff) drop-shadow(-5px 0 0 #fff) drop-shadow(0 5px 0 #fff) drop-shadow(0 -5px 0 #fff) drop-shadow(0 14px 16px rgba(0,0,0,.45))';
+      });
+      const fa = a0 + d.words.length * beat + 0.05, fk = lin(t, fa, fa + 0.47);
+      $('fin').style.opacity = clamp(fk * 4); $('fin').style.transform = `translateY(${90 * (1 - outBack(fk))}px)`;
+      markerSeek('mk', t, fa + 0.6);
+      exitAll(t);
+    },
+  },
+  pile: {  // list-stack-press: thẻ bay lên chồng, mỗi lần đáp làm cả chồng nhún, bộ đếm lăn số
+    build(d) {
+      const cls = ['or', 'bl', 'gr', 'yl'];
+      const rows = d.items.map((it, i) => `<div class="die" id="c${i}" style="margin-bottom:18px;opacity:0"><div class="row ${cls[i % 4]}" style="${cls[i % 4] === 'yl' ? 'color:#10204a' : ''}"><div class="e">${EMO[it.icon] || '⭐'}</div><div><b>${it.title}</b><span>${it.sub}</span></div></div></div>`).join('');
+      const strip = Array.from({ length: 20 }, (_, k) => `<div style="height:84px">${k % 10}</div>`).join('');
+      return `<div class="dim"></div><div class="abs" id="grp" style="left:70px;width:850px;top:${d.top || 470}px">
+        <div style="display:flex;align-items:center;gap:20px;margin-bottom:26px">
+          <div class="die" id="head" style="display:inline-block"><div class="chip wh" style="font-size:46px">${d.head}</div></div>
+          <div class="die" id="cnt" style="display:flex;align-items:center;background:#ff6a00;border-radius:24px;padding:0 22px;height:84px;color:#fff;font-family:'Be Vietnam Pro';font-weight:900;font-size:64px">
+            <div style="height:84px;overflow:hidden;line-height:84px"><div id="strip">${strip}</div></div><span style="font-size:40px;margin-left:6px">/${d.items.length}</span></div></div>
+        <div id="stack">${rows}</div></div>`;
+    },
+    seek(t) {
+      setDim(t, S.data.compact === false ? 0.45 : 0.3); stick($('head'), t, 0, -3);
+      const ci = lin(t, 0.05, 0.25); $('cnt').style.transform = `scale(${0.96 + 0.04 * outBack(ci)})`; $('cnt').style.opacity = clamp(ci * 4);
+      let press = 0, pos = 0;
+      S.data.items.forEach((it, i) => {
+        const k = lin(t, it.at, it.at + 0.73), b = 1 - Math.pow(1 - k, 3) + Math.sin(k * Math.PI) * 0.06 * (k > 0.8 ? 1 : 0);
+        $('c' + i).style.opacity = k > 0 ? 1 : 0;
+        $('c' + i).style.transform = `translateY(${600 * (1 - b)}px) rotate(${(i % 2 ? 2 : -2) * (1 - b)}deg) scale(${1 + 0.06 * (1 - b)})`;
+        const land = it.at + 0.73; if (t > land && t < land + 0.27) press = Math.max(press, Math.sin((t - land) / 0.27 * Math.PI) * 6);
+        pos += outCubic(lin(t, land, land + 0.27));
+      });
+      $('stack').style.transform = `translateY(${press}px)`;
+      $('strip').style.transform = `translateY(${-84 * pos}px)`;
+      exitAll(t);
+    },
+  },
+  flip: {  // card-flip-reveal: thẻ lật trục Y lộ con số kết quả, lệch nhau 0,4s
+    build(d) {
+      const n = d.cards.length, w = n === 3 ? 270 : 400;
+      return `<div class="dim"></div><div class="abs" id="grp" style="left:60px;width:880px;top:${d.top || 520}px;text-align:center">
+        ${d.head ? `<div class="die" id="head" style="display:inline-block;margin-bottom:30px"><div class="chip wh" style="font-size:46px">${d.head}</div></div>` : '<div id="head"></div>'}
+        <div style="display:flex;justify-content:center;gap:${n === 3 ? 30 : 40}px;perspective:1600px">
+        ${d.cards.map((c, i) => `<div id="fw${i}" style="width:${w}px;height:420px;position:relative;transform-style:preserve-3d">
+            <div class="abs" style="inset:0;border-radius:30px;background:#10204a;color:#fff;backface-visibility:hidden;box-shadow:0 0 0 6px #fff,0 16px 20px rgba(0,0,0,.45);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:0 18px">
+              <div style="font-family:'Segoe UI Emoji';font-size:96px">${c.icon || '⭐'}</div><b style="font-weight:800;font-size:40px;line-height:1.1">${c.front}</b>
+              <div id="gl${i}" class="abs" style="top:0;bottom:0;width:60px;left:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.55),transparent);opacity:0"></div></div>
+            <div class="abs" style="inset:0;border-radius:30px;background:#fff;backface-visibility:hidden;transform:rotateY(180deg);box-shadow:0 0 0 6px #10204a,0 16px 20px rgba(0,0,0,.45);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:0 14px">
+              <div class="big" id="bn${i}" style="--sw:10px;font-size:${w < 300 ? (c.back.length > 3 ? 78 : 96) : 130}px;line-height:1;color:#ff6a00;white-space:nowrap">${c.back}</div>
+              <b id="bl${i}" style="font-weight:800;font-size:34px;color:#10204a;line-height:1.1">${c.label}</b></div></div>`).join('')}</div></div>`;
+    },
+    seek(t) {
+      setDim(t, 0.5); if ($('head').firstChild) stick($('head'), t, 0, -3);
+      S.data.cards.forEach((c, i) => {
+        const a = c.at ?? 0.6 + i * 0.4, el = $('fw' + i);
+        stick(el, t, 0.1 + i * 0.08, 0);
+        let ang = 0;
+        if (t < a + 0.13) ang = -10 * outCubic(lin(t, a, a + 0.13));
+        else if (t < a + 0.67) { const k = (t - a - 0.13) / 0.54; ang = -10 + 204 * (k < 0.5 ? 2 * k * k * 1.6 : 1 - Math.pow(-2 * k + 2, 2) / 2) ; ang = Math.min(194, ang); }
+        else ang = 180 + 14 * (1 - spring(t - a - 0.67, 15));
+        const lift = Math.sin(clamp((t - a) / 0.8) * Math.PI) * 60;
+        el.style.transform += ` rotateY(${ang}deg) translateZ(${lift}px)`;
+        const g = clamp(1 - Math.abs(Math.abs(ang % 360) - 90) / 34); $('gl' + i).style.opacity = g; $('gl' + i).style.left = `${clamp((ang - 56) / 68) * 100}%`;
+        const pb = t - a - 0.67; $('bn' + i).style.transform = `scale(${pb > 0 ? 1 + 0.08 * (1 - spring(pb)) : 1.08})`; $('bl' + i).style.opacity = clamp((pb - 0.13) * 6);
+      });
+      exitAll(t);
+    },
+  },
+  retype: {  // typewriter-moves A: gõ chữ thường → ngập ngừng → xoá → gõ nhanh chữ "đắt" + gạch bút dạ
+    build(d) {
+      return `<div class="dim"></div><div class="abs" id="grp" style="left:70px;width:850px;top:${d.top || 600}px">
+        <div class="die" id="card" style="background:#fff;border-radius:34px;padding:36px 40px">
+          <div style="font-weight:800;font-size:46px;color:#5a6788">${d.pre}</div>
+          <div style="position:relative;margin-top:10px;font-family:'Be Vietnam Pro';font-weight:900;font-size:76px;line-height:1.15;color:#10204a;white-space:nowrap">
+            <span id="tx" style="position:relative"></span><span id="cur" style="display:inline-block;width:8px;height:76px;background:#ff6a00;vertical-align:-10px;margin-left:6px"></span></div></div></div>`;
+    },
+    seek(t) {
+      setDim(t, 0.45); stick($('card'), t, 0, -2); const d = S.data;
+      const st = 0.4, typ = 2 / 30, del = 1.5 / 30, w = d.wrong, r = d.right;
+      const t1 = st + w.length * typ, t2 = t1 + 0.53, t3 = t2 + w.length * del, t4 = t3 + r.length * del;
+      let txt = '', blink = false;
+      if (t < st) txt = ''; else if (t < t1) txt = w.slice(0, Math.floor((t - st) / typ));
+      else if (t < t2) { txt = w; blink = true; } else if (t < t3) txt = w.slice(0, w.length - Math.floor((t - t2) / del));
+      else if (t < t4) txt = r.slice(0, Math.floor((t - t3) / del)); else { txt = r; blink = t < t4 + 0.27; }
+      const done = t >= t4;
+      if ($('tx').dataset.v !== txt + done) { $('tx').dataset.v = txt + done; $('tx').innerHTML = done ? `<span style="color:#ff6a00">${txt}</span>` + marker('mk', 10) : txt;
+        if (done) { const wd = $('tx').firstChild.offsetWidth; $('tx').querySelector('#mk').remove(); $('tx').insertAdjacentHTML('beforeend', marker('mk', wd)); } }
+      $('cur').style.opacity = done && t > t4 + 0.27 ? 0 : blink ? (Math.floor(t / 0.133) % 2 ? 0 : 1) : 1;
+      if (done) markerSeek('mk', t, t4 + 0.2);
+      exitAll(t);
+    },
+  },
+});
+
+// slam: thêm 2 kiểu đập (slam-entrance-moves B score-slam, riso-print-hits) — data.fx = 'score' | 'riso'
+const slamBase = TYPES.slam;
+TYPES.slam = {
+  build(d) {
+    let h = slamBase.build(d);
+    if (d.fx === 'score') h += `<svg class="abs" id="ring" style="left:0;top:0;width:1080px;height:1920px;pointer-events:none" viewBox="0 0 1080 1920"><circle id="rc" cx="540" cy="900" r="10" fill="none" stroke="#fff" stroke-width="10"/></svg>
+      ${Array.from({ length: 14 }, (_, i) => `<div class="abs" id="sh${i}" style="width:${16 + (i * 7) % 18}px;height:${10 + (i * 5) % 14}px;background:${['#ffd23f', '#fff', '#ff6a00'][i % 3]};left:540px;top:900px;opacity:0;clip-path:polygon(0 0,100% 30%,70% 100%)"></div>`).join('')}
+      <div class="abs" id="wf" style="inset:0;background:#fff;opacity:0"></div>`;
+    if (d.fx === 'riso') h = h.replace('<span id="num">', '<span id="num" style="position:relative">');
+    return h;
+  },
+  seek(t) {
+    slamBase.seek(t); const d = S.data, nw = $('numw');
+    if (d.fx === 'score') {   // treo trước ống kính 2,6× mờ → đập ease-in(quad) 0,2s → lò xo; vòng xung kích + mảnh vỡ + rung + chớp trắng cùng khung
+      const hit = 0.5, k = lin(t, 0.2, hit);
+      const sc = t < hit ? 2.6 - 1.635 * inQuad(k) : 0.965 + 0.035 * spring(t - hit, 14);
+      const s = shake(t, hit);
+      nw.style.transform = `translate(${s * 0.4}px,${s}px) rotate(${t < hit ? -4 + 9 * (1 - k) : -4}deg) scale(${sc})`;
+      nw.style.filter = t < hit ? `blur(${10 * (1 - k)}px)` : 'drop-shadow(5px 0 0 #fff) drop-shadow(-5px 0 0 #fff) drop-shadow(0 5px 0 #fff) drop-shadow(0 -5px 0 #fff) drop-shadow(0 14px 16px rgba(0,0,0,.45))';
+      nw.style.opacity = t < 0.2 ? 0.5 * clamp(t * 6) : 1;
+      const rk = t - hit; $('rc').setAttribute('r', rk > 0 ? 60 + 690 * outCubic(rk / 0.53) : 0); $('rc').style.opacity = rk > 0 ? Math.max(0, 1 - rk / 0.6) : 0;
+      $('rc').setAttribute('stroke-width', rk > 0 ? 10 - 8 * clamp(rk / 0.53) : 0);
+      for (let i = 0; i < 14; i++) { const a = i / 14 * Math.PI * 2 + i, dd = (280 + (i * 37) % 300) * outCubic(rk / 0.6);
+        Object.assign($('sh' + i).style, { transform: `translate(${Math.cos(a) * dd}px,${Math.sin(a) * dd}px) rotate(${rk * 720 + i * 40}deg)`, opacity: rk > 0 ? Math.max(0, 1 - rk / 0.7) : 0 }); }
+      $('wf').style.opacity = rk > 0 && rk < 0.07 ? 0.55 : 0;
+    }
+    if (d.fx === 'riso') {   // tách 2 bản in hồng/xanh lệch nhau, rung tắt dần rồi "tách" khớp lại một phát
+      const hit = 0.45, rk = t - hit, snap = 1.4;
+      const on = rk > 0 && t < snap, A = on ? Math.cos(2 * Math.PI * rk / 0.6) * Math.exp(-rk / 2) : 0;
+      const sh = on ? `${20 * A}px ${8 * A}px 0 rgba(255,79,163,.85), ${-20 * A}px ${-8 * A}px 0 rgba(31,95,196,.85)` : '';
+      $('num').style.textShadow = sh;
+      if (t >= snap && t < snap + 0.13) nw.style.transform += ` scale(${1.03 - 0.03 * (t - snap) / 0.13})`;
+    }
+  },
+};
+
+window.setup = (cfg) => { S = { ...cfg }; $('root').innerHTML = TYPES[cfg.type].build(cfg.data); S.dim = $('root').querySelector('.dim'); return document.fonts.ready.then(() => { TYPES[cfg.type].layout?.(); return true; }); };
+window.seek = (t) => { TYPES[S.type].seek(t); return true; };
+</script>
+</body>
+</html>

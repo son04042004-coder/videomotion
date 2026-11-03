@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700;800&family=Be+Vietnam+Pro:wght@800;900&display=block" rel="stylesheet">
+<style>
+  /* Thumbnail KÊNH 2 "Sticker dán": ảnh thật dán như tấm ảnh polaroid có băng keo, chữ là sticker cắt viền trắng.
+     Chữ quan trọng nằm trong dải 3:4 (y 240–1680) để đọc rõ ở lưới trang cá nhân. */
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 1080px; height: 1920px; overflow: hidden; font-family: 'Baloo 2', sans-serif; background: #10204a; }
+  #bg { position: absolute; inset: -40px; width: 1160px; height: 2000px; object-fit: cover; filter: blur(12px) brightness(.5) saturate(1.2); }
+  .die { filter: drop-shadow(7px 0 0 #fff) drop-shadow(-7px 0 0 #fff) drop-shadow(0 7px 0 #fff) drop-shadow(0 -7px 0 #fff) drop-shadow(0 18px 20px rgba(0,0,0,.5)); }
+  #photo { position: absolute; left: 120px; top: 1010px; width: 840px; padding: 18px 18px 18px; background: #fff; transform: rotate(-3deg); box-shadow: 0 24px 40px rgba(0,0,0,.55); }
+  #shot { display: block; width: 804px; height: 520px; object-fit: cover; object-position: var(--pos, 50% 30%); }
+  .tape { position: absolute; width: 190px; height: 56px; background: repeating-linear-gradient(45deg, rgba(255,240,180,.95) 0 16px, rgba(255,210,120,.95) 16px 32px); }
+  .chip { display: inline-block; border-radius: 30px; font-weight: 800; color: #fff; padding: 2px 40px 10px; white-space: nowrap; }
+  #tagw { position: absolute; top: 270px; left: 0; right: 0; text-align: center; }
+  #tag { font-size: 64px; background: #ff6a00; transform: rotate(-4deg); }
+  #l1 { position: absolute; left: 40px; right: 40px; top: 400px; text-align: center; font-family: 'Be Vietnam Pro'; font-weight: 900; font-size: 116px; line-height: 1.04; color: #fff;
+        -webkit-text-stroke: 16px #10204a; paint-order: stroke fill; transform: rotate(-2deg); }
+  #num { position: absolute; left: 40px; right: 40px; top: 660px; text-align: center; font-family: 'Be Vietnam Pro'; font-weight: 900; line-height: .95; letter-spacing: -8px; color: #ffd23f;
+         -webkit-text-stroke: 20px #10204a; paint-order: stroke fill; transform: rotate(-5deg); white-space: nowrap; }
+  #num small { font-size: .45em; letter-spacing: 0; color: #fff; }
+  #subw { position: absolute; top: 1560px; left: 0; right: 0; text-align: center; }
+  #sub { font-size: 56px; background: #2f6bff; transform: rotate(2deg); }
+  .v2 #tag { background: #ff4f8b; } .v2 #sub { background: #00b86b; } .v2 #num { color: #ff6a00; }
+</style>
+</head>
+<body>
+<img id="bg">
+<div id="photo"><img id="shot"><div class="tape" style="left:-60px;top:-24px;transform:rotate(-28deg)"></div><div class="tape" style="right:-60px;top:-24px;transform:rotate(26deg)"></div></div>
+<div id="tagw" class="die"><div class="chip" id="tag"></div></div><div class="die" id="l1"></div><div class="die" id="num"></div><div id="subw" class="die"><div class="chip" id="sub"></div></div>
+<script>
+  window.setup = (d) => {
+    document.body.className = d.variant || 'v1';
+    document.getElementById('bg').src = d.img; document.getElementById('shot').src = d.img;
+    document.getElementById('shot').style.setProperty('--pos', d.pos || '50% 30%');
+    document.getElementById('tag').textContent = d.tag;
+    document.getElementById('l1').innerHTML = d.l1;
+    const n = document.getElementById('num');
+    n.innerHTML = `${d.num}<small> ${d.unit}</small>`;
+    n.style.fontSize = (d.num.length >= 4 ? 250 : d.num.length === 3 ? 300 : 340) + 'px';
+    document.getElementById('sub').textContent = d.sub;
+    return Promise.all([document.fonts.ready, ...[...document.images].map((i) => i.decode().catch(() => 0))]);
+  };
+</script>
+</body>
+</html>

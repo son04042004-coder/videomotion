@@ -1,0 +1,10 @@
+{
+  "name": "videomotion-kit",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Focused Windows toolkit for the /videomotion video workflow",
+  "type": "module",
+  "dependencies": {
+    "playwright-core": "1.63.0"
+  }
+}
